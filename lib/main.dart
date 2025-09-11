@@ -5,7 +5,7 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 Future<void> main() async {
   await dotenv.load(fileName: ".env");
-  runApp(const MyApp());
+  runApp(const MainApp());
 }
 
 enum AppState {
@@ -16,14 +16,18 @@ enum AppState {
   postRide
 }
 
-class MyApp extends StatefulWidget {
-  const MyApp({super.key});
+class MainApp extends StatefulWidget {
+  const MainApp({super.key});
 
   @override
-  State<MyApp> createState() => _MyAppState();
+  State<MainApp> createState() => _MainAppState();
 }
 
-class _MyAppState extends State<MyApp> {
+class _MainAppState extends State<MainApp> {
+  LatLng? _currentLocation;
+  CameraPosition? _initialPosition;
+  late GoogleMapController _mapController;
+
   @override
   void initState() {
     super.initState();
@@ -36,9 +40,6 @@ class _MyAppState extends State<MyApp> {
   }
 
   Future <void> _checkLocationPermission() async {
-    LatLng? _currentLocation;
-    CameraPosition? _initialPosition;
-
     final isServiceEnabled = await Geolocator.isLocationServiceEnabled();
     if(!isServiceEnabled) {
       if(mounted) {
@@ -82,19 +83,25 @@ class _MyAppState extends State<MyApp> {
         target: _currentLocation!,
         zoom: 14
       );
+      _mapController.animateCamera(
+        CameraUpdate.newCameraPosition(_initialPosition!)
+      );
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    return const MaterialApp(
+    return MaterialApp(
       home: Scaffold(
         body: GoogleMap(
           myLocationEnabled: true,
           initialCameraPosition: CameraPosition(
             target: LatLng(37.7749, -122.4194),
             zoom: 14
-          )
+          ),
+          onMapCreated: (controller) {
+            _mapController = controller;
+          },
         )
       ),
     );

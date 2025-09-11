@@ -20,17 +20,17 @@ Deno.serve(async (req) => {
     `https://routes.googleapis.com/directions/v2:computeRoutes?key=${Deno.env.get('GOOGLE_MAPS_API_KEY')}`,
     {
       method: 'POST',
-      'Content-Type': 'application/json',
-      "X-Goog-FieldMask": "routes.duration,routes.distanceMeters,routes.polyline,routes.legs.polyline"
-    },
-    body: JSON.stringify(
-      {
+      headers: {
+        "Content-Type": "application/json",
+        "X-Goog-FieldMask": "routes.duration,routes.distanceMeters,routes.polyline,routes.legs.polyline"
+      },
+      body: JSON.stringify({
         origin: { location: { latLng: origin } },
         destination: { location: { latLng: destination } },
         travelMode: 'DRIVE',
         polylineEncoding: "GEO_JSON_LINESTRING"
-      }
-    )
+      })
+    }
   );
 
   if(!response.ok) {

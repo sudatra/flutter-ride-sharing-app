@@ -39,16 +39,25 @@ class _MainAppState extends State<MainApp> {
   late GoogleMapController _mapController;
   final Set <Polyline> _polylines = {};
   final Set <Marker> _markers = {};
+  BitmapDescriptor? _pinIcon;
 
   @override
   void initState() {
     super.initState();
     _checkLocationPermission();
+    _loadPinIcon();
   }
 
   @override
   void dispose() {
     super.dispose();
+  }
+
+  Future <void> _loadPinIcon() async {
+    _pinIcon = await BitmapDescriptor.asset(
+      ImageConfiguration(size: Size(48, 48)),
+      'assets/images/pin.png'
+    );
   }
 
   Future <void> _checkLocationPermission() async {
@@ -153,7 +162,7 @@ class _MainAppState extends State<MainApp> {
             );
 
             final data = response.data as Map <String, dynamic>;
-            final coordinates = data['legs'][0]['polyline']['geoJsonLinestring'] as List <dynamic>;
+            final coordinates = data['legs'][0]['polyline']['geoJsonLinestring']['coordinates'] as List <dynamic>;
             final duration = data['duration'] as String;
 
             final polylineCoordinates = coordinates.map((coordinate) {
@@ -175,9 +184,9 @@ class _MainAppState extends State<MainApp> {
               Marker(
                 markerId: MarkerId('destination'),
                 position: _selectedDestination!,
-                icon: _pinIcon
+                icon: _pinIcon!
               )
-            )
+            );
           }, 
           label: const Text('Confirm Destination')
         ),

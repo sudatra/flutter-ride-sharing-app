@@ -14,6 +14,8 @@ Future<void> main() async {
   runApp(const MainApp());
 }
 
+final supabase = Supabase.instance.client;
+
 enum AppState {
   choosingLocation,
   confirmFare,
@@ -30,10 +32,13 @@ class MainApp extends StatefulWidget {
 }
 
 class _MainAppState extends State<MainApp> {
-  AppState _appState = AppState.choosingLocation;
+  final AppState _appState = AppState.choosingLocation;
   LatLng? _currentLocation;
+  LatLng? _selectedDestination;
   CameraPosition? _initialPosition;
   late GoogleMapController _mapController;
+  final Set <Polyline> _polylines = {};
+  final Set <Marker> _markers = {};
 
   @override
   void initState() {
@@ -103,6 +108,8 @@ class _MainAppState extends State<MainApp> {
         body: Stack(
           children: [
             GoogleMap(
+              polylines: _polylines,
+              markers: _markers,
               myLocationEnabled: true,
               initialCameraPosition: CameraPosition(
                 target: LatLng(37.7749, -122.4194),
@@ -110,6 +117,11 @@ class _MainAppState extends State<MainApp> {
               ),
               onMapCreated: (controller) {
                 _mapController = controller;
+              },
+              onCameraMove: (position) {
+                if(_appState == AppState.choosingLocation) {
+                  _selectedDestination = position.target;
+                }
               },
             ),
             
@@ -126,7 +138,46 @@ class _MainAppState extends State<MainApp> {
         floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
         floatingActionButton: FloatingActionButton.extended(
           onPressed: () async {
-            
+            final response = await supabase.functions.invoke(
+              'routes',
+              body: {
+                'origin': {
+                  'latitude': _currentLocation!.latitude,
+                  'longitude': _currentLocation!.longitude
+                },
+                'destination': {
+                  'latitude': _selectedDestination!.latitude,
+                  'longitude': _selectedDestination!.longitude
+                }
+              }
+            );
+
+            final data = response.data as Map <String, dynamic>;
+            final coordinates = data['legs'][0]['polyline']['geoJsonLinestring'] as List <dynamic>;
+            final duration = data['duration'] as String;
+
+            final polylineCoordinates = coordinates.map((coordinate) {
+              return LatLng(coordinate[1], coordinate[0]);
+            }).toList();
+
+            setState(() {
+              _polylines.add(
+                Polyline(
+                  polylineId: const PolylineId('route'),
+                  points: polylineCoordinates,
+                  color: Colors.black,
+                  width: 5
+                )
+              );
+            });
+
+            _markers.add(
+              Marker(
+                markerId: MarkerId('destination'),
+                position: _selectedDestination!,
+                icon: _pinIcon
+              )
+            )
           }, 
           label: const Text('Confirm Destination')
         ),

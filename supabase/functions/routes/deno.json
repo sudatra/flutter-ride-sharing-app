@@ -1,5 +1,12 @@
 {
   "compilerOptions": {
-    "lib": ["deno.ns"]
+    "lib": [
+      "deno.ns",
+      "deno.unstable",
+      "dom"
+    ]
+  },
+  "imports": {
+    "@supabase/functions-js/": "npm:@supabase/functions-js@2.4.1/"
   }
 }

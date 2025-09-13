@@ -1,7 +1,5 @@
 /// <reference types="https://esm.sh/@supabase/functions-js/src/edge-runtime.d.ts" />
 
-import "jsr:@supabase/functions-js/edge-runtime.d.ts"
-
 type Coordinates = {
   latitude: number;
   longitude: number;

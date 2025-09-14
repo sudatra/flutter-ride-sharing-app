@@ -187,6 +187,21 @@ class _MainAppState extends State<MainApp> {
                 icon: _pinIcon!
               )
             );
+
+            final bounds = LatLngBounds(
+              southwest: LatLng(
+                polylineCoordinates.map((e) => e.latitude).reduce((a, b) => a < b ? a : b),
+                polylineCoordinates.map((e) => e.longitude).reduce((a, b) => a < b ? a : b)
+              ),
+              northeast: LatLng(
+                polylineCoordinates.map((e) => e.latitude).reduce((a, b) => a > b ? a : b),
+                polylineCoordinates.map((e) => e.longitude).reduce((a, b) => a > b ? a : b)
+              )
+            );
+
+            _mapController.animateCamera(
+              CameraUpdate.newLatLngBounds(bounds, 100)
+            );
           }, 
           label: const Text('Confirm Destination')
         ),

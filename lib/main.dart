@@ -32,7 +32,7 @@ class MainApp extends StatefulWidget {
 }
 
 class _MainAppState extends State<MainApp> {
-  final AppState _appState = AppState.choosingLocation;
+  AppState _appState = AppState.choosingLocation;
   LatLng? _currentLocation;
   LatLng? _selectedDestination;
   CameraPosition? _initialPosition;
@@ -107,6 +107,16 @@ class _MainAppState extends State<MainApp> {
       _mapController.animateCamera(
         CameraUpdate.newCameraPosition(_initialPosition!)
       );
+    });
+  }
+
+  void _goToNextState() {
+    setState(() {
+      if(_appState == AppState.postRide) {
+        _appState = AppState.choosingLocation;
+      } else {
+        _appState = AppState.values[_appState.index + 1];
+      }
     });
   }
 
@@ -202,6 +212,8 @@ class _MainAppState extends State<MainApp> {
             _mapController.animateCamera(
               CameraUpdate.newLatLngBounds(bounds, 100)
             );
+
+            _goToNextState();
           }, 
           label: const Text('Confirm Destination')
         ),

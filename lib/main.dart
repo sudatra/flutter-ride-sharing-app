@@ -154,6 +154,24 @@ class _MainAppState extends State<MainApp> {
               )
           ]
         ),
+        bottomSheet: _appState == AppState.confirmFare
+          ? Container(
+            width: MediaQuery.of(context).size.width,
+            padding: const EdgeInsets.all(16),
+            decoration: const BoxDecoration(
+              color: Colors.white,
+            ),
+            child: Column(
+              children: [
+                Text('Confirm Fare'),
+                SizedBox(height: 16),
+
+                Text('Estimated Fare: ')
+              ],
+            ),
+          )
+          : SizedBox.shrink()
+        ,
         floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
         floatingActionButton: FloatingActionButton.extended(
           onPressed: () async {

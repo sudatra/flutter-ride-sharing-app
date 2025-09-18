@@ -181,7 +181,26 @@ class _MainAppState extends State<MainApp> {
                 const SizedBox(height: 16),
 
                 ElevatedButton(
-                  onPressed: () async {}, 
+                  onPressed: () async {
+                    try {
+                      final response = await supabase.rpc('find_driver', params: {
+                        'origin': 'POINT(${_currentLocation!.longitude} ${_currentLocation!.latitude})',
+                        'destination': 'POINT(${_selectedDestination!.longitude} ${_selectedDestination!.latitude})',
+                        'fare': _fare
+                      }) as List<dynamic>;
+
+                      if(response.isEmpty) {
+                        if(mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text('No Driver found. Please Try again later.'))
+                          );
+                        }
+                      }
+                    }
+                    catch(error) {
+
+                    }
+                  }, 
                   child: const Text('Confirm Fare')
                 )
               ],

@@ -28,7 +28,63 @@ enum AppState {
   postRide
 }
 
+enum RideStatus {
+  picking_up,
+  riding,
+  completed
+}
 
+class Driver {
+  final String id;
+  final String model;
+  final String number;
+  final bool isAvailable;
+  final LatLng location;
+
+  Driver({
+    required this.id,
+    required this.model,
+    required this.number,
+    required this.isAvailable,
+    required this.location
+  });
+
+  factory Driver.fromJson(Map<String, dynamic> json) {
+    return Driver(
+      id: json['id'],
+      model: json['model'],
+      number: json['number'],
+      isAvailable: json['is_available'],
+      location: LatLng(json['latitude'], json['longitude'])
+    );
+  }
+}
+
+class Ride {
+  final String id;
+  final String driverId;
+  final String passengerId;
+  final int fare;
+  final RideStatus status;
+
+  Ride({
+    required this.id,
+    required this.driverId,
+    required this.passengerId,
+    required this.fare,
+    required this.status
+  });
+
+  factory Ride.fromJson(Map<String, dynamic> json) {
+    return Ride(
+      id: json['id'],
+      driverId: json['driver_id'],
+      passengerId: json['passenger_id'],
+      fare: json['fare'],
+      status: RideStatus.values.firstWhere((e) => e.toString().split('.').last == json['status'])
+    );
+  }
+}
 
 class MainApp extends StatefulWidget {
   const MainApp({super.key});
@@ -42,19 +98,25 @@ class _MainAppState extends State<MainApp> {
   LatLng? _currentLocation;
   LatLng? _selectedDestination;
   CameraPosition? _initialPosition;
+  
   late GoogleMapController _mapController;
   final Set <Polyline> _polylines = {};
   final Set <Marker> _markers = {};
+
   BitmapDescriptor? _pinIcon;
+  BitmapDescriptor? _carIcon; 
+
   late int _fare;
   StreamSubscription? _driverSubscription;
   StreamSubscription? _rideSubscription;
+
+  Driver? _driver;
 
   @override
   void initState() {
     super.initState();
     _checkLocationPermission();
-    _loadPinIcon();
+    _loadIcons();
   }
 
   @override
@@ -65,10 +127,15 @@ class _MainAppState extends State<MainApp> {
     super.dispose();
   }
 
-  Future <void> _loadPinIcon() async {
+  Future <void> _loadIcons() async {
     _pinIcon = await BitmapDescriptor.asset(
       ImageConfiguration(size: Size(48, 48)),
       'assets/images/pin.png'
+    );
+
+    _carIcon = await BitmapDescriptor.asset(
+      ImageConfiguration(size: Size(48, 48)),
+      'assets/images/car.png'
     );
   }
 
@@ -129,6 +196,19 @@ class _MainAppState extends State<MainApp> {
       } else {
         _appState = AppState.values[_appState.index + 1];
       }
+    });
+  }
+
+  void _updateDriverMarker(Driver driver) {
+    setState(() {
+      _markers.removeWhere((marker) => marker.markerId.value == 'driver');
+      _markers.add(
+        Marker(
+          markerId: MarkerId('driver'),
+          position: driver.location,
+          icon: _carIcon!
+        )
+      );
     });
   }
 
@@ -213,7 +293,8 @@ class _MainAppState extends State<MainApp> {
                           .stream(primaryKey: ['id'])
                           .eq('id', driverId)
                           .listen((driver) {
-
+                            _driver = Driver.fromJson(driver.first);
+                            _updateDriverMarker(_driver!);
                           })
                         ;
 

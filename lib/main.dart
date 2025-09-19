@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:duration/duration.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
@@ -26,6 +28,8 @@ enum AppState {
   postRide
 }
 
+
+
 class MainApp extends StatefulWidget {
   const MainApp({super.key});
 
@@ -43,6 +47,8 @@ class _MainAppState extends State<MainApp> {
   final Set <Marker> _markers = {};
   BitmapDescriptor? _pinIcon;
   late int _fare;
+  StreamSubscription? _driverSubscription;
+  StreamSubscription? _rideSubscription;
 
   @override
   void initState() {
@@ -53,6 +59,9 @@ class _MainAppState extends State<MainApp> {
 
   @override
   void dispose() {
+    _driverSubscription?.cancel();
+    _rideSubscription?.cancel();
+
     super.dispose();
   }
 
@@ -195,6 +204,27 @@ class _MainAppState extends State<MainApp> {
                             SnackBar(content: Text('No Driver found. Please Try again later.'))
                           );
                         }
+
+                        final driverId = response.first['driver_id'] as String;
+                        final rideId = response.first['ride_id'] as String;
+
+                        _driverSubscription = supabase
+                          .from('drivers')
+                          .stream(primaryKey: ['id'])
+                          .eq('id', driverId)
+                          .listen((driver) {
+
+                          })
+                        ;
+
+                        _rideSubscription = supabase
+                          .from('rides')
+                          .stream(primaryKey: ['id'])
+                          .eq('id', rideId)
+                          .listen((ride) {
+
+                          })
+                        ;
                       }
                     }
                     catch(error) {

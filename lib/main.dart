@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math';
 
 import 'package:duration/duration.dart';
 import 'package:flutter/material.dart';
@@ -212,6 +213,15 @@ class _MainAppState extends State<MainApp> {
     });
   }
 
+  void _adjustMapView({required LatLng target}) {
+    final bounds = LatLngBounds(
+      southwest: LatLng(min(_driver!.location.latitude, target.latitude), min(_driver!.location.longitude, target.longitude)), 
+      northeast: LatLng(max(_driver!.location.latitude, target.latitude), max(_driver!.location.longitude, target.longitude))
+    );
+
+    _mapController.animateCamera(CameraUpdate.newLatLngBounds(bounds, 50));
+  }
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -294,7 +304,10 @@ class _MainAppState extends State<MainApp> {
                           .eq('id', driverId)
                           .listen((driver) {
                             _driver = Driver.fromJson(driver.first);
+
                             _updateDriverMarker(_driver!);
+                            _adjustMapView(target: _appState == AppState.waitingForPickup ? _currentLocation! : _selectedDestination!);
+                            _goToNextState();
                           })
                         ;
 

@@ -116,6 +116,7 @@ class _MainAppState extends State<MainApp> {
   @override
   void initState() {
     super.initState();
+    _signInIfNotSignedIn();
     _checkLocationPermission();
     _loadIcons();
   }
@@ -126,6 +127,12 @@ class _MainAppState extends State<MainApp> {
     _rideSubscription?.cancel();
 
     super.dispose();
+  }
+
+  Future <void> _signInIfNotSignedIn() async {
+    if(supabase.auth.currentSession == null) {
+      await supabase.auth.signInAnonymously();
+    }
   }
 
   Future <void> _loadIcons() async {
@@ -294,35 +301,35 @@ class _MainAppState extends State<MainApp> {
                             SnackBar(content: Text('No Driver found. Please Try again later.'))
                           );
                         }
-
-                        final driverId = response.first['driver_id'] as String;
-                        final rideId = response.first['ride_id'] as String;
-
-                        _driverSubscription = supabase
-                          .from('drivers')
-                          .stream(primaryKey: ['id'])
-                          .eq('id', driverId)
-                          .listen((driver) {
-                            _driver = Driver.fromJson(driver.first);
-
-                            _updateDriverMarker(_driver!);
-                            _adjustMapView(target: _appState == AppState.waitingForPickup ? _currentLocation! : _selectedDestination!);
-                            _goToNextState();
-                          })
-                        ;
-
-                        _rideSubscription = supabase
-                          .from('rides')
-                          .stream(primaryKey: ['id'])
-                          .eq('id', rideId)
-                          .listen((ride) {
-
-                          })
-                        ;
                       }
+
+                      final driverId = response.first['driver_id'] as String;
+                      final rideId = response.first['ride_id'] as String;
+
+                      _driverSubscription = supabase
+                        .from('drivers')
+                        .stream(primaryKey: ['id'])
+                        .eq('id', driverId)
+                        .listen((driver) {
+                          _driver = Driver.fromJson(driver.first);
+
+                          _updateDriverMarker(_driver!);
+                          _adjustMapView(target: _appState == AppState.waitingForPickup ? _currentLocation! : _selectedDestination!);
+                          _goToNextState();
+                        })
+                      ;
+
+                      _rideSubscription = supabase
+                        .from('rides')
+                        .stream(primaryKey: ['id'])
+                        .eq('id', rideId)
+                        .listen((ride) {
+
+                        })
+                      ;
                     }
                     catch(error) {
-
+                      print(error);
                     }
                   }, 
                   child: const Text('Confirm Fare')

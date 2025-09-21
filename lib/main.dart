@@ -113,6 +113,8 @@ class _MainAppState extends State<MainApp> {
 
   Driver? _driver;
 
+  LatLng? _previousDriverPosition;
+
   @override
   void initState() {
     super.initState();
@@ -207,14 +209,29 @@ class _MainAppState extends State<MainApp> {
     });
   }
 
+  double _calculateRotation(LatLng start, LatLng end) {
+    double latDiff = end.latitude - start.latitude;
+    double longDiff = end.longitude - start.longitude;
+    double angle = atan2(longDiff, latDiff);
+
+    return (angle * 180) / pi;
+  }
+
   void _updateDriverMarker(Driver driver) {
     setState(() {
       _markers.removeWhere((marker) => marker.markerId.value == 'driver');
+
+      double rotation = 0;
+      if(_previousDriverPosition != null) {
+        rotation = _calculateRotation(_previousDriverPosition!, driver.location)
+      }
+
       _markers.add(
         Marker(
           markerId: MarkerId('driver'),
           position: driver.location,
-          icon: _carIcon!
+          icon: _carIcon!,
+          rotation: rotation
         )
       );
     });

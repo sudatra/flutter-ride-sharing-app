@@ -223,7 +223,7 @@ class _MainAppState extends State<MainApp> {
 
       double rotation = 0;
       if(_previousDriverPosition != null) {
-        rotation = _calculateRotation(_previousDriverPosition!, driver.location)
+        rotation = _calculateRotation(_previousDriverPosition!, driver.location);
       }
 
       _markers.add(
@@ -234,6 +234,7 @@ class _MainAppState extends State<MainApp> {
           rotation: rotation
         )
       );
+      _previousDriverPosition = driver.location;
     });
   }
 
@@ -332,7 +333,6 @@ class _MainAppState extends State<MainApp> {
 
                           _updateDriverMarker(_driver!);
                           _adjustMapView(target: _appState == AppState.waitingForPickup ? _currentLocation! : _selectedDestination!);
-                          _goToNextState();
                         })
                       ;
 
@@ -341,9 +341,11 @@ class _MainAppState extends State<MainApp> {
                         .stream(primaryKey: ['id'])
                         .eq('id', rideId)
                         .listen((ride) {
-
+                          // app status update
                         })
                       ;
+
+                      _goToNextState();
                     }
                     catch(error) {
                       print(error);

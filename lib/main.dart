@@ -341,8 +341,18 @@ class _MainAppState extends State<MainApp> {
                           .from('rides')
                           .stream(primaryKey: ['id'])
                           .eq('id', rideId)
-                          .listen((ride) {
-                            // app status update
+                          .listen((rides) {
+                            final ride = Ride.fromJson(rides.first);
+
+                            if(ride.status == RideStatus.riding) {
+                              setState(() {
+                                _appState = AppState.riding;
+                              });
+                            } else if(ride.status == RideStatus.completed) {
+                              setState(() {
+                                _appState = AppState.postRide;
+                              });
+                            }
                           })
                         ;
 

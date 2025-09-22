@@ -281,7 +281,7 @@ class _MainAppState extends State<MainApp> {
               )
           ]
         ),
-        bottomSheet: _appState == AppState.confirmFare
+        bottomSheet: _appState == AppState.confirmFare || _appState == AppState.waitingForPickup
           ? Container(
             width: MediaQuery.of(context).size.width,
             padding: const EdgeInsets.all(16).copyWith(bottom: MediaQuery.of(context).padding.bottom),
@@ -292,67 +292,93 @@ class _MainAppState extends State<MainApp> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               mainAxisSize: MainAxisSize.min,
               children: [
-                Text(
-                  'Confirm Fare',
-                  style: Theme.of(context).textTheme.titleLarge,
-                ),
-                const SizedBox(height: 16),
+                if(_appState == AppState.confirmFare) ...[
+                  Text(
+                    'Confirm Fare',
+                    style: Theme.of(context).textTheme.titleLarge,
+                  ),
+                  const SizedBox(height: 16),
 
-                Text('Estimated Fare: ${NumberFormat.currency(
-                  symbol: '\$',
-                  decimalDigits: 2
-                ).format(_fare / 100)}'),
-                const SizedBox(height: 16),
+                  Text('Estimated Fare: ${NumberFormat.currency(
+                    symbol: '\$',
+                    decimalDigits: 2
+                  ).format(_fare / 100)}'),
+                  const SizedBox(height: 16),
 
-                ElevatedButton(
-                  onPressed: () async {
-                    try {
-                      final response = await supabase.rpc('find_driver', params: {
-                        'origin': 'POINT(${_currentLocation!.longitude} ${_currentLocation!.latitude})',
-                        'destination': 'POINT(${_selectedDestination!.longitude} ${_selectedDestination!.latitude})',
-                        'fare': _fare
-                      }) as List<dynamic>;
+                  ElevatedButton(
+                    onPressed: () async {
+                      try {
+                        final response = await supabase.rpc('find_driver', params: {
+                          'origin': 'POINT(${_currentLocation!.longitude} ${_currentLocation!.latitude})',
+                          'destination': 'POINT(${_selectedDestination!.longitude} ${_selectedDestination!.latitude})',
+                          'fare': _fare
+                        }) as List<dynamic>;
 
-                      if(response.isEmpty) {
-                        if(mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text('No Driver found. Please Try again later.'))
-                          );
+                        if(response.isEmpty) {
+                          if(mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text('No Driver found. Please Try again later.'))
+                            );
+                          }
                         }
+
+                        final driverId = response.first['driver_id'] as String;
+                        final rideId = response.first['ride_id'] as String;
+
+                        _driverSubscription = supabase
+                          .from('drivers')
+                          .stream(primaryKey: ['id'])
+                          .eq('id', driverId)
+                          .listen((driver) {
+                            _driver = Driver.fromJson(driver.first);
+
+                            _updateDriverMarker(_driver!);
+                            _adjustMapView(target: _appState == AppState.waitingForPickup ? _currentLocation! : _selectedDestination!);
+                          })
+                        ;
+
+                        _rideSubscription = supabase
+                          .from('rides')
+                          .stream(primaryKey: ['id'])
+                          .eq('id', rideId)
+                          .listen((ride) {
+                            // app status update
+                          })
+                        ;
+
+                        _goToNextState();
                       }
+                      catch(error) {
+                        print(error);
+                      }
+                    }, 
+                    child: const Text('Confirm Fare')
+                  )
+                ],
+                if(_appState == AppState.waitingForPickup && _driver != null) ...[
+                  Text(
+                    'Your Driver',
+                    style: Theme.of(context).textTheme.titleLarge
+                  ),
+                  const SizedBox(height: 8),
 
-                      final driverId = response.first['driver_id'] as String;
-                      final rideId = response.first['ride_id'] as String;
+                  Text(
+                    'Car: ${_driver!.model}',
+                    style: Theme.of(context).textTheme.titleMedium
+                  ),
+                  const SizedBox(height: 8),
 
-                      _driverSubscription = supabase
-                        .from('drivers')
-                        .stream(primaryKey: ['id'])
-                        .eq('id', driverId)
-                        .listen((driver) {
-                          _driver = Driver.fromJson(driver.first);
+                  Text(
+                    'Plate Number: ${_driver!.number}',
+                    style: Theme.of(context).textTheme.titleMedium
+                  ),
+                  const SizedBox(height: 16),
 
-                          _updateDriverMarker(_driver!);
-                          _adjustMapView(target: _appState == AppState.waitingForPickup ? _currentLocation! : _selectedDestination!);
-                        })
-                      ;
-
-                      _rideSubscription = supabase
-                        .from('rides')
-                        .stream(primaryKey: ['id'])
-                        .eq('id', rideId)
-                        .listen((ride) {
-                          // app status update
-                        })
-                      ;
-
-                      _goToNextState();
-                    }
-                    catch(error) {
-                      print(error);
-                    }
-                  }, 
-                  child: const Text('Confirm Fare')
-                )
+                  Text(
+                    'Your driver is on the way. Please wait at the pickup location.',
+                    style: Theme.of(context).textTheme.bodyMedium
+                  )
+                ]
               ],
             ),
           )

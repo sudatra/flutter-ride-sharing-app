@@ -16,7 +16,9 @@ Future<void> main() async {
   );
 
   await dotenv.load(fileName: ".env");
-  runApp(const MainApp());
+  runApp(const MaterialApp(
+    home: MainApp(),
+  ));
 }
 
 final supabase = Supabase.instance.client;

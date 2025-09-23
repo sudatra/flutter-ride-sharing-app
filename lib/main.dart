@@ -125,9 +125,7 @@ class _MainAppState extends State<MainApp> {
 
   @override
   void dispose() {
-    _driverSubscription?.cancel();
-    _rideSubscription?.cancel();
-
+    _cancelSubscriptions();
     super.dispose();
   }
 
@@ -215,6 +213,38 @@ class _MainAppState extends State<MainApp> {
     double angle = atan2(longDiff, latDiff);
 
     return (angle * 180) / pi;
+  }
+
+  void _cancelSubscriptions() {
+    _driverSubscription?.cancel();
+    _rideSubscription?.cancel();
+  }
+
+  void _showCompletionModal() {
+    showDialog(
+      context: context, 
+      builder: (context) {
+        return AlertDialog(
+          title: Text('Ride Completed'),
+          content: Text('Thank you for using our services !!'),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                setState(() {
+                  _appState = AppState.choosingLocation;
+                  _selectedDestination = null;
+                  _driver = null;
+                  _polylines.clear();
+                  _markers.clear();
+                });
+              }, 
+              child: Text('Close')
+            )
+          ],
+        );
+      }
+    );
   }
 
   void _updateDriverMarker(Driver driver) {
@@ -351,6 +381,9 @@ class _MainAppState extends State<MainApp> {
                             } else if(ride.status == RideStatus.completed) {
                               setState(() {
                                 _appState = AppState.postRide;
+
+                                _cancelSubscriptions();
+                                _showCompletionModal();
                               });
                             }
                           })
